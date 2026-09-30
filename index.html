@@ -1,0 +1,110 @@
+وهو وو<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تطبيق مذاكرة - Enterprise Architecture</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .quiz-card { background: white; width: 100%; max-width: 650px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+    .header h1 { color: #1a73e8; margin: 0; font-size: 24px; }
+    .progress { color: #666; font-size: 14px; margin-top: 5px; }
+    .question { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 20px; line-height: 1.5; }
+    .options { display: flex; flex-direction: column; gap: 12px; }
+    .option-btn { padding: 14px; border: 2px solid #e0e0e0; background: white; border-radius: 8px; text-align: right; font-size: 16px; cursor: pointer; transition: all 0.2s ease; }
+    .option-btn:hover { border-color: #1a73e8; background: #f8faff; }
+    .option-btn.correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; font-weight: bold; }
+    .option-btn.wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
+    .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-top: 2px solid #eee; padding-top: 15px; }
+    .score-box { font-size: 16px; font-weight: bold; color: #333; }
+    .next-btn { background: #1a73e8; color: white; border: none; padding: 10px 25px; border-radius: 8px; font-size: 16px; cursor: pointer; display: none; }
+    .next-btn:hover { background: #1557b0; }
+  </style>
+</head>
+<body>
+
+  <div class="quiz-card">
+    <div class="header">
+      <h1>بنك أسئلة هندسة المؤسسات (EA)</h1>
+      <div class="progress" id="progress">السؤال 1 من --</div>
+    </div>
+
+    <div class="question" id="question">جاري تحميل بنك الأسئلة...</div>
+    <div class="options" id="options"></div>
+
+    <div class="footer">
+      <div class="score-box" id="score">النتيجة: 0</div>
+      <button class="next-btn" id="next-btn" onclick="nextQuestion()">السؤال التالي ⬅️</button>
+    </div>
+  </div>
+
+  <script>
+    let questions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    fetch('questions.json')
+      .then(res => res.json())
+      .then(data => {
+        questions = data;
+        loadQuestion();
+      });
+
+    function loadQuestion() {
+      answered = false;
+      const q = questions[currentIndex];
+      document.getElementById('progress').innerText = `السؤال ${currentIndex + 1} من ${questions.length}`;
+      document.getElementById('question').innerText = q.question;
+      document.getElementById('next-btn').style.display = 'none';
+
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = opt;
+        btn.onclick = () => selectOption(btn, idx);
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function selectOption(selectedBtn, idx) {
+      if (answered) return;
+      answered = true;
+
+      const correctIdx = questions[currentIndex].answer;
+      const allBtns = document.querySelectorAll('.option-btn');
+
+      if (idx === correctIdx) {
+        selectedBtn.classList.add('correct');
+        score++;
+        document.getElementById('score').innerText = `النتيجة: ${score}`;
+      } else {
+        selectedBtn.classList.add('wrong');
+        allBtns[correctIdx].classList.add('correct');
+      }
+
+      document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex < questions.length) {
+        loadQuestion();
+      } else {
+        document.querySelector('.quiz-card').innerHTML = `
+          <div class="header">
+            <h1>🎉 اكتمل الاختبار بنجاح!</h1>
+            <p style="font-size: 20px; margin-top:20px;">درجتك النهائية هي: <strong>${score} / ${questions.length}</strong></p>
+            <button class="next-btn" style="display:inline-block; margin-top:20px;" onclick="location.reload()">إعادة الاختبار 🔄</button>
+          </div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
